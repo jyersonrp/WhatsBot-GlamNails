@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: whatsbot_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: whatsbot_glamnails
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/migrations/0000_heavy_nemesis.sql:/docker-entrypoint-initdb.d/01_schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d whatsbot_glamnails"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: whatsbot_app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/whatsbot_glamnails
+      APP_SECRET: glam_nails_docker_session_secret_key_2026
+      WHATSAPP_MODE: mock
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:

@@ -1,6 +1,6 @@
 export const Session = {
-  cookieName: "kimi_sid",
-  maxAgeMs: 365 * 24 * 60 * 60 * 1000,
+  cookieName: "whatsbot_sid",
+  maxAgeMs: 30 * 24 * 60 * 60 * 1000, // 30 days
 } as const;
 
 export const ErrorMessages = {
@@ -10,5 +10,19 @@ export const ErrorMessages = {
 
 export const Paths = {
   login: "/login",
-  oauthCallback: "/api/oauth/callback",
+  dashboard: "/dashboard",
+  appointments: "/appointments",
+  conversations: "/conversations",
+} as const;
+
+export const Roles = {
+  admin: "admin",
+  agent: "agent",
+} as const;
+
+export const AppointmentStatuses = {
+  pendiente: "pendiente",
+  confirmada: "confirmada",
+  cancelada: "cancelada",
+  completada: "completada",
 } as const;

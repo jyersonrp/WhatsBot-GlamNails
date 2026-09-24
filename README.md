@@ -1,138 +1,221 @@
-# WhatsBot — Sistema Automatizado de Atención al Cliente vía WhatsApp
-## Salón de Belleza y Uñas: **Glam Nails Maturín**
+# 💅 WhatsBot — Glam Nails Maturín
+### CRM Inteligente, Agenda de Citas y Automatización de Atención al Cliente vía WhatsApp
 
 <p align="center">
-  <img src="https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg?style=flat-square&logo=creative-commons" alt="CC BY-NC-ND 4.0" />
-  <img src="https://img.shields.io/badge/TypeScript-5.7%2B-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/React-18.3-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React" />
-  <img src="https://img.shields.io/badge/Hono-4.6%2B-E36002?style=flat-square&logo=hono&logoColor=white" alt="Hono" />
-  <img src="https://img.shields.io/badge/Drizzle_ORM-0.38-C5F74F?style=flat-square&logo=drizzle&logoColor=black" alt="Drizzle ORM" />
+  <img src="https://img.shields.io/badge/Status-Production%20Ready-emerald?style=for-the-badge&logo=checkmarx&logoColor=white" alt="Status" />
+  <img src="https://img.shields.io/badge/TypeScript-5.7+-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" />
+  <img src="https://img.shields.io/badge/Hono-4.6+-E36002?style=for-the-badge&logo=hono&logoColor=white" alt="Hono" />
+  <img src="https://img.shields.io/badge/Drizzle_ORM-0.45-C5F74F?style=for-the-badge&logo=drizzle&logoColor=black" alt="Drizzle ORM" />
+  <img src="https://img.shields.io/badge/PostgreSQL%20%7C%20PGlite-Embedded-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/WhatsApp-Cloud%20API%20v21.0-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" alt="WhatsApp" />
+  <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/Tests-26%2F26%20Passed-brightgreen?style=for-the-badge&logo=vitest&logoColor=white" alt="Tests" />
 </p>
 
-**Universidad de Oriente — Núcleo de Monagas**  
-**Escuela de Ingeniería y Ciencias Aplicadas — Departamento de Ingeniería de Sistemas**  
-**Cátedra:** Dirección de Operaciones (071-5963)  
-**Profesor:** Ing. Heickel Loreto  
-**Bachilleres:**
-- Yerrison Peinado (CI: 30.265.660)
-- Luis Guatarasma (CI: 31.615.255)
-- Yerson Rodríguez (CI: 30.624.650)
-- Diana Flores (CI: 30.223.425)
-- José Rodríguez (CI: 27.719.820)
-*Maturín, Agosto 2026*
+---
+
+## 🌸 Descripción General
+
+**WhatsBot — Glam Nails Maturín** es una plataforma integral de **CRM y Asistente Virtual para WhatsApp** diseñada exclusivamente para salones boutique de belleza y manicure. Desarrollada para automatizar las consultas informativas de alta demanda, agilizar el agendamiento y confirmación de citas, supervisar conversaciones en tiempo real y gestionar comprobantes de Pago Móvil con tasa oficial del BCV.
+
+El sistema opera bajo un **patrón de doble controlador (Driver Pattern)**: permite realizar pruebas inmediatas en el **Simulador WhatsApp Web interactivo** sin costo ni credenciales, o conectarse directamente a la **API Oficial de Meta (WhatsApp Business Cloud API Graph v21.0)** para operar con números reales.
 
 ---
 
-## 📌 Descripción del Proyecto
+## ✨ Características Principales
 
-**WhatsBot** es una solución integral de CRM y Bot de WhatsApp orientada a automatizar la atención al cliente de **Glam Nails Maturín**, salón especializado en el cuidado de uñas ubicado en el Centro Comercial Las Cascadas (Maturín, Estado Monagas).
+### 🤖 1. Asistente Virtual Inteligente (Bot Sofía)
+- **Motor NLP de Priorización Semántica**: Discierne inteligentemente entre saludos simples e intenciones reales de negocio. Si una clienta escribe *"Hola, necesito cancelar mi cita"*, el motor descarta el saludo genérico y ejecuta de inmediato la regla de cancelación.
+- **Detección de Servicios & Precios**: Reconoce variantes de servicios (acrílicas esculpidas, soft gel, kapping, baño de acrílico, semipermanente, pedicure spa, nail art).
+- **Control de Horario Comercial**: Responde con mensajes automáticos de cortesía fuera del horario laboral (martes a sábado de 9:00 am a 5:00 pm).
+- **Menú de Fallback Guiado**: Ante mensajes no reconocidos, ofrece un menú claro con accesos directos en vez de reiterar el saludo.
+- **Escalado Humano en 1 Clic**: El bot se silencia automáticamente cuando la clienta pide hablar con una asesora o cuando la recepcionista decide intervenir manualmente.
 
-El bot resuelve de forma 100% inmediata y automatizada las consultas informativas de alta demanda:
-- **Catálogo de Servicios**: Manicura clásica/rusa, acrílico, polygel, semipermanente, pedicura spa, nail art.
-- **Precios y Tarifas**: Lista actualizada de precios ($5 a $22).
-- **Horario de Atención**: Martes a Sábado de 9:00 am a 5:00 pm.
-- **Ubicación**: C.C. Las Cascadas, Nivel 1, Local 14 (frente a la feria de comida).
-- **Promociones del Mes**: Combos especiales y descuentos de cumpleaños.
+### 💬 2. CRM de Conversaciones en Tiempo Real
+- **Interfaz WhatsApp Web Boutique**: Paleta de colores elegante inspirada en salones de lujo (Rose Gold `#FAF9F6`, verde menta recepcionista, rosa suave bot).
+- **Sincronización Continua**: Mensajes actualizados cada 3 segundos sin recargar la página.
+- **Plantillas de Respuesta Rápida (1-Clic)**: Accesos directos a precios, ubicación, datos de pago móvil, horario y confirmación.
+- **Visor Multimedia**: Zoom modal para consultar capturas de Pago Móvil y diseños de uñas enviados por las clientas.
+- **Ficha de la Clienta (Dossier Flotante)**: Ventana modal responsiva con historial de citas, estatus de fidelidad VIP, total de inversión acumulada y agendamiento exprés.
 
-### 🚨 Criterio de Escalado a Asesora Humana
-El bot deriva la atención a una recepcionista/asesora humana únicamente cuando la solicitud exige consultar la agenda en tiempo real para:
-1. **Agendar una nueva cita**.
-2. **Cancelar o reprogramar una cita existente**.
-3. **Solicitud explícita de hablar con una persona**.
+### 📅 3. Módulo de Citas y Calendario de Agenda
+- **Vista Dual**: Alterna con un clic entre **Vista Lista de Citas** y **Vista Calendario Mensual**.
+- **Acciones Rápidas**: Confirmación y notificación automática a la clienta por WhatsApp en un toque.
+- **Estados de Cita**: Control visual por estados (*Pendiente*, *Confirmada*, *Completada*, *Cancelada*).
+- **Precios Multi-Moneda**: Visualización de tarifas en Dólares ($ USD) y Bolívares (Bs) a tasa oficial referencial del BCV.
 
----
+### 🧪 4. Simulador WhatsApp Web Integrado
+- **Ambiente de Pruebas Seguro**: Simula un teléfono móvil dentro del navegador para probar cómo responde el bot ante cualquier mensaje.
+- **Botones de Prueba Rápida**: Botones listos para probar preguntas frecuentes con un solo clic (*"¿Precios?"*, *"¿Tienen cita para hoy?"*, *"Datos de Pago Móvil"*, *"Cancelar cita"*).
 
-## 🏗️ Arquitectura y Stack Tecnológico
-
-- **Frontend CRM**: React 18 + Vite + Tailwind CSS + Lucide Icons (Dark Mode elegante con identidad visual Glam Nails).
-- **Backend API**: Hono framework con Node.js / TypeScript.
-- **Base de Datos & ORM**: Drizzle ORM + SQLite / MySQL schema compatible (`users`, `whatsapp_config`, `bot_configuration`, `bot_rules`, `message_templates`, `contacts`, `conversations`, `messages`, `webhook_logs`).
-- **Motor de Reglas**: 12 reglas ordenadas por prioridad con activadores por `keyword`, `contains`, `exact` y `regex`.
-- **Integración Externa**: WhatsApp Business Cloud API (Meta) con verificación de webhook y endpoints de mensajería.
-- **Simulador Interactivo**: Entorno de pruebas WhatsApp Web integrado en el CRM con telemetría en tiempo real.
-
----
-
-## 📋 Las 12 Reglas del Bot (Bot Builder)
-
-| # | Regla | Tipo | Disparadores | Respuesta / Acción |
-|---|---|---|---|---|
-| **1** | Saludo de bienvenida | `keyword` | `hola`, `buenas`, `buenos dias`, `buenas tardes` | Menú inicial y bienvenida al salón. |
-| **2** | Catálogo de servicios | `contains` | `catalogo`, `servicios`, `que ofrecen` | Lista de servicios detallada. |
-| **3** | Precios y tarifas | `contains` | `precio`, `costo`, `cuanto cuesta`, `acrilico`, `gel` | Lista de precios en USD ($5 - $22). |
-| **4** | Horario de atención | `keyword` | `horario`, `abren`, `cierran`, `a que hora` | Mar a Sáb 9:00 am a 5:00 pm. |
-| **5** | Ubicación | `keyword` | `ubicacion`, `donde estan`, `direccion`, `local` | C.C. Las Cascadas Nivel 1 Local 14. |
-| **6** | Agendar cita | `keyword` | `cita`, `agendar`, `reservar`, `turno` | 🚨 **Escala a Asesora** (Solicita datos). |
-| **7** | Cancelar o reprogramar | `contains` | `cancelar`, `reprogramar`, `cambiar cita` | 🚨 **Escala a Asesora** (Modificación). |
-| **8** | Promociones | `keyword` | `promocion`, `oferta`, `descuento`, `combo` | Combo Glam Star 15% desc., 2x1 semi. |
-| **9** | Hablar con asesora | `keyword` | `asesora`, `persona`, `humano`, `operador` | 🚨 **Escala a Asesora** (Atención directa). |
-| **10** | Despedida | `keyword` | `gracias`, `muchas gracias`, `adios`, `chao` | Agradecimiento y despedida cordial. |
-| **11** | Ayuda | `keyword` | `ayuda`, `menu`, `opciones`, `comandos` | Lista de palabras clave disponibles. |
-| **12** | Respuesta por defecto | `exact` | `*` (fallback) | Orientación guiada de opciones. |
+### 🛡️ 5. Autenticación Nativa y Seguridad
+- **Sin Dependencias Externas Propietarias**: Desacoplado de servicios de terceros (AWS Cognito, Kimi OAuth, etc.).
+- **Seguridad Criptográfica**: Hashing de contraseñas con sal y derivación criptográfica nativa de Node.js (`crypto.scrypt`).
+- **Sesiones HTTP-only**: Cookies de sesión seguras firmadas con JWT (`SameSite=Lax`, `HttpOnly`).
+- **Control de Acceso Basado en Roles (RBAC)**: Procedimientos tRPC protegidos (`authedProcedure` y `adminProcedure`).
 
 ---
 
-## 🚀 Instalación y Puesta en Marcha
+## 🏛️ Arquitectura del Sistema
 
-### 1. Clonar e Instalar Dependencias
+```mermaid
+flowchart TD
+    subgraph Cliente["🖥️ Frontend (React 19 + Vite)"]
+        UI["🎨 Dashboard, CRM, Citas & Bot Builder"]
+        SIM["📱 Simulador WhatsApp Web"]
+        TRPC_C["🔌 tRPC Client"]
+    end
+
+    subgraph Servidor["⚡ Backend Full-Stack (Hono Framework)"]
+        AUTH["🔐 Auth Service (scrypt + JWT Cookies)"]
+        ROUTER["📡 tRPC Router & REST Endpoints"]
+        ENGINE["🧠 Motor de Reglas Bot Sofía"]
+        DRIVER{"🔀 WhatsApp Driver"}
+        MOCK["🧪 Mock Driver (Simulador)"]
+        META["🌐 Meta Cloud API Driver (Graph v21.0)"]
+    end
+
+    subgraph Persistencia["🗄️ Capa de Datos (Drizzle ORM)"]
+        PG["🐘 PostgreSQL 16 (Producción / Docker)"]
+        PGLITE["⚡ PGlite (Local / Zero-Config)"]
+    end
+
+    UI --> TRPC_C
+    SIM --> TRPC_C
+    TRPC_C --> ROUTER
+    ROUTER --> AUTH
+    ROUTER --> ENGINE
+    ROUTER --> DRIVER
+    DRIVER --> MOCK
+    DRIVER --> META
+    ROUTER --> Persistencia
+    PGLITE -.->|Fallback Automático| PG
+```
+
+---
+
+## 🛠️ Stack Tecnológico
+
+| Capa | Tecnologías |
+| :--- | :--- |
+| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS v4, Lucide Icons, Radix UI, Sonner, date-fns |
+| **Backend** | Node.js 20+, Hono, TypeScript, tRPC v11, esbuild |
+| **Persistencia** | Drizzle ORM, PostgreSQL 16, PGlite (Postgres WebAssembly embebido en Node.js) |
+| **Mensajería** | WhatsApp Business Cloud API v21.0, Webhooks de Meta con verificación HMAC SHA-256 |
+| **Testing** | Vitest (26 pruebas unitarias del motor de intenciones) |
+| **DevOps** | Docker, Docker Compose, Multi-stage builds |
+
+---
+
+## 🚀 Inicio Rápido (Local)
+
+### Requisitos Previos
+- **Node.js** 20.x o superior
+- **npm** 10.x o superior
+- *(Opcional)* **Docker** y **Docker Compose** para PostgreSQL externo
+
+### 1. Clonar el Repositorio
+```bash
+git clone https://github.com/jyersonrp/WhatsBot-GlamNails.git
+cd WhatsBot-GlamNails
+```
+
+### 2. Instalar Dependencias
 ```bash
 npm install
 ```
 
-### 2. Sembrar los Datos Reales de Glam Nails Maturín
+### 3. Configurar Variables de Entorno
+Copia el archivo de ejemplo:
 ```bash
-npm run db:seed:salon
-# O alternativamente:
-npx tsx server/db/seed-salon-unas.ts
+cp .env.example .env
 ```
+> **Nota:** La aplicación incluye valores predeterminados para desarrollo local. No requiere ninguna configuración obligatoria para iniciar con la base de datos embebida (PGlite).
 
-### 3. Ejecutar las Pruebas del Motor de Reglas (Tabla 10)
+### 4. Compilar y Ejecutar
 ```bash
-npm run test:rules
+# Compilar frontend y backend
+npm run build
+
+# Iniciar servidor en producción local
+npm start
 ```
+Abre tu navegador en: **`http://localhost:3000`**
 
-### 4. Iniciar el Servidor Backend y la Interfaz CRM
-```bash
-# Iniciar servidor backend Hono (puerto 4000)
-npm run dev
-
-# En otra terminal, iniciar el cliente Vite (puerto 3000)
-npm run dev:client
-```
-
-Acceder a:
-- **CRM & Dashboard**: [http://localhost:3000](http://localhost:3000)
-- **API Backend**: [http://localhost:4000/api/health](http://localhost:4000/api/health)
-- **Webhook de WhatsApp**: `http://localhost:4000/api/webhook`
+### 🔑 Credenciales de Acceso Inicial
+- **Email:** `admin@glamnails.com`
+- **Contraseña:** `admin123`
+*(O crear una cuenta con tu propio correo desde la pantalla de Login)*
 
 ---
 
-## 🧪 Validación y Suite de Pruebas
+## 🐳 Despliegue con Docker
 
-El script `npm run test:rules` valida los 12 mensajes de prueba estandarizados del informe:
-1. `Hola, buenas tardes` → Saludo de bienvenida ✅
-2. `¿Qué servicios tienen?` → Catálogo de servicios ✅
-3. `¿Cuánto cuesta el acrílico?` → Precios ✅
-4. `¿A qué hora abren?` → Horario de atención ✅
-5. `¿Dónde están ubicados?` → Ubicación ✅
-6. `Quiero reservar una cita para el sábado` → Agendar cita ✅
-7. `Necesito cancelar cita` → Cancelar o reprogramar cita ✅
-8. `¿Tienen alguna promoción?` → Promociones ✅
-9. `Quiero hablar con una persona` → Hablar con asesora ✅
-10. `Muchas gracias, hasta luego` → Despedida ✅
-11. `Cuánto vale el gel` → Precios ✅
-12. `Quiero cancelar mi cita` → Cancelar o reprogramar cita ✅
+Para levantar la aplicación completa junto a PostgreSQL 16 en un contenedor aislado:
+
+```bash
+docker-compose up --build -d
+```
+El servicio estará disponible en `http://localhost:3000`.
 
 ---
 
-## 📄 Licencia y Reconocimientos
+## 🧪 Pruebas Unitarias y Calidad
 
-Proyecto desarrollado con fines académicos y de optimización operativa para la cátedra de **Dirección de Operaciones** de la **Universidad de Oriente (UDO)**, Núcleo de Monagas.
+El proyecto incluye suites completas de pruebas automatizadas y chequeo estricto de tipos:
 
-Este proyecto está bajo la Licencia **Creative Commons Atribución-NoComercial-SinDerivadas 4.0 Internacional (CC BY-NC-ND 4.0)**.
+```bash
+# Ejecutar suite de pruebas unitarias (Vitest)
+npm test
 
-- **Uso No Comercial (NC)**: No se permite la comercialización, reventa, empaquetado como producto SaaS ni monetización de este software o de la lógica operativa de Glam Nails Maturín sin autorización expresa.
-- **Sin Derivadas (ND)**: No se autoriza la distribución de versiones modificadas, bifurcaciones (forks) comerciales ni obras derivadas.
-- **Reconocimiento Académico (BY)**: Todo uso o referencia debe otorgar el debido crédito a los autores y a la **Universidad de Oriente (UDO)**.
+# Verificación estricta de tipos TypeScript
+npm run check
 
-Para más detalles, consulte el archivo [LICENSE](LICENSE).
+# Auditoría de calidad de código (ESLint)
+npm run lint
+```
+
+---
+
+## 📂 Estructura del Proyecto
+
+```
+WhatsBot-GlamNails/
+├── api/                       # Backend full-stack con Hono & tRPC
+│   ├── lib/                   # Autenticación, JWT, cookies, crypto y base de datos
+│   ├── queries/               # Operaciones Drizzle ORM por entidad
+│   ├── services/              # Motor de reglas Sofía y Drivers de WhatsApp
+│   │   ├── botRulesEngine.ts  # NLP y priorización de intenciones
+│   │   └── whatsappDriver.ts  # Meta Cloud API y Mock Driver
+│   ├── appointment-router.ts  # Router de citas y agenda
+│   ├── service-router.ts      # Router de catálogo de servicios
+│   ├── webhook-router.ts      # Webhook oficial de Meta WhatsApp
+│   └── boot.ts                # Entrypoint de arranque del servidor
+├── db/                        # Esquemas y migraciones Drizzle
+│   ├── migrations/            # Migraciones SQL versionadas
+│   ├── schema.ts              # Modelado relacional en PostgreSQL
+│   └── seed-salon-unas.ts     # Semillas iniciales del salón Glam Nails
+├── src/                       # Frontend SPA (React 19 + Tailwind CSS)
+│   ├── components/            # Sidebar, Header, Modales, Simulador WhatsApp
+│   ├── pages/                 # Dashboard, Citas, CRM Conversaciones, Reglas, Login
+│   ├── providers/             # Proveedores React Query y tRPC Client
+│   └── index.css              # Estilos globales y paleta Salón Boutique
+├── tests/                     # Pruebas automatizadas (Vitest)
+├── Dockerfile                 # Imagen multi-stage para producción
+├── docker-compose.yml         # Orquestación con PostgreSQL 16
+└── README.md                  # Documentación oficial del proyecto
+```
+
+---
+
+## 👩‍💻 Autor y Créditos
+
+Proyecto desarrollado y modernizado por **Yerson Rodríguez** ([@jyersonrp](https://github.com/jyersonrp)).  
+Inspirado en la automatización operativa y atención al cliente del salón **Glam Nails Maturín**.
+
+---
+
+<p align="center">
+  Hecho con 💅 y ☕ para salones de belleza modernos.
+</p>

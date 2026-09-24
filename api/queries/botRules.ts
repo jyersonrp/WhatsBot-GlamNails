@@ -1,8 +1,9 @@
 import { getDb } from "./connection";
-import { botRules, type InsertBotRule } from "@db/schema";
+import { botRules, type InsertBotRule, type BotRule } from "@db/schema";
 import { eq, asc } from "drizzle-orm";
+import { matchRuleInMemory } from "../services/botRulesEngine";
 
-export async function findAllBotRules(activeOnly?: boolean) {
+export async function findAllBotRules(activeOnly?: boolean): Promise<BotRule[]> {
   const db = getDb();
   if (activeOnly) {
     return db.query.botRules.findMany({
@@ -15,73 +16,39 @@ export async function findAllBotRules(activeOnly?: boolean) {
   });
 }
 
-export async function findBotRuleById(id: number) {
+export async function findBotRuleById(id: number): Promise<BotRule | undefined> {
   const db = getDb();
   return db.query.botRules.findFirst({
     where: eq(botRules.id, id),
   });
 }
 
-export async function createBotRule(data: InsertBotRule) {
+export async function createBotRule(data: InsertBotRule): Promise<BotRule> {
   const db = getDb();
-  const result = await db.insert(botRules).values(data).$returningId();
-  return findBotRuleById(result[0].id);
+  const rows = await db.insert(botRules).values(data).returning();
+  return rows[0];
 }
 
-export async function updateBotRule(id: number, data: Partial<InsertBotRule>) {
+export async function updateBotRule(id: number, data: Partial<InsertBotRule>): Promise<BotRule | undefined> {
   const db = getDb();
-  await db.update(botRules).set(data).where(eq(botRules.id, id));
-  return findBotRuleById(id);
+  const rows = await db.update(botRules).set(data).where(eq(botRules.id, id)).returning();
+  return rows[0];
 }
 
-export async function deleteBotRule(id: number) {
+export async function deleteBotRule(id: number): Promise<{ id: number }> {
   const db = getDb();
   await db.delete(botRules).where(eq(botRules.id, id));
   return { id };
 }
 
-export async function toggleBotRule(id: number) {
+export async function toggleBotRule(id: number): Promise<BotRule | undefined> {
   const rule = await findBotRuleById(id);
-  if (!rule) return null;
+  if (!rule) return undefined;
   return updateBotRule(id, { isActive: !rule.isActive });
 }
 
-// Bot response matching logic
-export async function findMatchingRule(message: string): Promise<InsertBotRule | null> {
+// Bot response matching logic using the normalized engine
+export async function findMatchingRule(message: string): Promise<BotRule | null> {
   const rules = await findAllBotRules(true);
-  const lowerMessage = message.toLowerCase().trim();
-
-  for (const rule of rules) {
-    const triggerValue = rule.triggerValue.toLowerCase();
-
-    switch (rule.triggerType) {
-      case "exact":
-        if (lowerMessage === triggerValue) return rule;
-        break;
-      case "keyword":
-        const keywords = triggerValue.split(",").map((k) => k.trim());
-        if (keywords.some((kw) => lowerMessage.includes(kw))) return rule;
-        break;
-      case "contains":
-        if (lowerMessage.includes(triggerValue)) return rule;
-        break;
-      case "regex":
-        try {
-          const regex = new RegExp(triggerValue, "i");
-          if (regex.test(message)) return rule;
-        } catch {
-          continue;
-        }
-        break;
-      case "default":
-        // Default rule matches everything but should be last
-        break;
-    }
-  }
-
-  // Return default rule if no match
-  const defaultRule = rules.find((r) => r.triggerType === "default");
-  if (defaultRule) return defaultRule;
-
-  return null;
+  return matchRuleInMemory(message, rules);
 }

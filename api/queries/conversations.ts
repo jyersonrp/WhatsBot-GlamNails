@@ -3,6 +3,7 @@ import {
   conversations,
   messages,
   type InsertConversation,
+  type Conversation,
 } from "@db/schema";
 import { eq, desc, and, sql } from "drizzle-orm";
 
@@ -39,22 +40,30 @@ export async function findConversationByPhone(phone: string) {
   });
 }
 
-export async function createConversation(data: InsertConversation) {
+export async function createConversation(data: InsertConversation): Promise<Conversation> {
   const db = getDb();
-  const result = await db
+  const rows = await db
     .insert(conversations)
     .values(data)
-    .$returningId();
-  return findConversationById(result[0].id);
+    .returning();
+  return rows[0];
 }
 
 export async function updateConversation(
   id: number,
   data: Partial<InsertConversation>
-) {
+): Promise<Conversation | undefined> {
   const db = getDb();
-  await db.update(conversations).set(data).where(eq(conversations.id, id));
-  return findConversationById(id);
+  const rows = await db
+    .update(conversations)
+    .set(data)
+    .where(eq(conversations.id, id))
+    .returning();
+  return rows[0];
+}
+
+export async function setBotMuted(id: number, isBotMuted: boolean): Promise<Conversation | undefined> {
+  return updateConversation(id, { isBotMuted });
 }
 
 export async function archiveConversation(id: number) {
@@ -63,13 +72,14 @@ export async function archiveConversation(id: number) {
 
 export async function incrementUnread(id: number) {
   const db = getDb();
-  await db
+  const rows = await db
     .update(conversations)
     .set({
       unreadCount: sql`${conversations.unreadCount} + 1`,
     })
-    .where(eq(conversations.id, id));
-  return findConversationById(id);
+    .where(eq(conversations.id, id))
+    .returning();
+  return rows[0];
 }
 
 export async function resetUnread(id: number) {

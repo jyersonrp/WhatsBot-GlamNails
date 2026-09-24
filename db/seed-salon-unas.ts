@@ -1,5 +1,8 @@
 import { getDb } from "../api/queries/connection";
 import {
+  users,
+  services,
+  appointments,
   botConfiguration,
   botRules,
   messageTemplates,
@@ -7,156 +10,239 @@ import {
   messages,
   contacts,
 } from "./schema";
+import { hashPassword } from "../api/lib/crypto";
 
 /**
- * Datos semilla específicos para el caso de estudio del proyecto:
- * "Glam Nails Maturín" — salón de uñas.
- *
- * Reutiliza el mismo esquema de base de datos que seed-simple.ts
- * (no se modifica db/schema.ts) pero reemplaza el contenido genérico
- * de "planes/pedidos" de software por el negocio real: catálogo de
- * servicios de uñas, horario de atención, reglas de conversación,
- * plantillas y contactos de ejemplo.
- *
- * Ver MEJORA_SALON_UNAS.md para el detalle de qué se agregó y por qué.
+ * Datos semilla específicos para el caso de estudio:
+ * "Glam Nails Maturín" — Salón de belleza y estética de uñas.
  */
+export async function seedGlamNails(dbInstance?: ReturnType<typeof getDb>) {
+  const db = dbInstance || getDb();
+  console.log("🌸 Sembrando datos de Glam Nails Maturín en PostgreSQL...");
 
-async function seed() {
-  const db = getDb();
-  console.log("Sembrando datos de Glam Nails Maturín...");
+  // ── 1. Usuarios del Sistema (Admin y Recepcionista) ───────────
+  const adminPasswordHash = await hashPassword("admin123456");
+  const agentPasswordHash = await hashPassword("agente123456");
 
-  // ── Configuración del bot ──────────────────────────────────────
+  const seededUsers = await db
+    .insert(users)
+    .values([
+      {
+        email: "admin@glamnails.com",
+        passwordHash: adminPasswordHash,
+        name: "Andrea Directora (Glam Nails)",
+        role: "admin",
+        avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
+      },
+      {
+        email: "recepcion@glamnails.com",
+        passwordHash: agentPasswordHash,
+        name: "Valentina Recepción",
+        role: "agent",
+        avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+      },
+    ])
+    .returning();
+  console.log("✅ Usuarios iniciales creados (admin@glamnails.com / admin123456)");
+
+  // ── 2. Catálogo de Servicios de Uñas ──────────────────────────
+  const seededServices = await db
+    .insert(services)
+    .values([
+      {
+        name: "Manicure Clásica",
+        description: "Limpieza profunda de cutículas, limado anatómico, exfoliación y esmaltado tradicional.",
+        priceUsd: 6,
+        durationMinutes: 45,
+        isActive: true,
+      },
+      {
+        name: "Manicure Spa",
+        description: "Manicure completa con mascarilla hidratante, masaje relajante y parafina tibia.",
+        priceUsd: 9,
+        durationMinutes: 60,
+        isActive: true,
+      },
+      {
+        name: "Esmaltado Semipermanente",
+        description: "Esmaltado en gel curado en lámpara UV/LED con duración impecable de 21 días.",
+        priceUsd: 10,
+        durationMinutes: 60,
+        isActive: true,
+      },
+      {
+        name: "Uñas Acrílicas Esculpidas",
+        description: "Extensión con polímero acrílico de alta durabilidad, forma y largo al gusto.",
+        priceUsd: 18,
+        durationMinutes: 120,
+        isActive: true,
+      },
+      {
+        name: "Uñas en Gel (Soft Gel)",
+        description: "Tips de gel suave ultra ligeros de fijación completa, acabado natural e hipoalergénico.",
+        priceUsd: 16,
+        durationMinutes: 90,
+        isActive: true,
+      },
+      {
+        name: "Pedicure Spa",
+        description: "Higiene podal integral, exfoliación con sales marinas y esmaltado impecable.",
+        priceUsd: 10,
+        durationMinutes: 60,
+        isActive: true,
+      },
+      {
+        name: "Nail Art / Diseños",
+        description: "Diseño a mano alzada, pedrería Swarovski, foil o efecto cromo (tarifa por uña).",
+        priceUsd: 1,
+        durationMinutes: 15,
+        isActive: true,
+      },
+    ])
+    .returning();
+  console.log(`✅ Catálogo de servicios creado (${seededServices.length} servicios)`);
+
+  // ── 3. Configuración del Bot ──────────────────────────────────
   await db.insert(botConfiguration).values({
     isActive: true,
     welcomeMessage:
-      "¡Hola! 💅 Bienvenida a *Glam Nails Maturín*. Soy tu asistente virtual y puedo ayudarte con:\n\n" +
-      "1️⃣ Catálogo y precios\n2️⃣ Horario de atención\n3️⃣ Ubicación\n4️⃣ Agendar una cita\n" +
-      "5️⃣ Cancelar o reprogramar\n6️⃣ Promociones\n7️⃣ Hablar con una asesora\n\n¿En qué te ayudo hoy?",
+      "¡Hola! 💅 Bienvenida a *Glam Nails Maturín*. Soy Sofía, tu asistente virtual y puedo ayudarte con:\n\n" +
+      "1️⃣ Catálogo de servicios\n2️⃣ Precios y tarifas\n3️⃣ Horario de atención\n4️⃣ Ubicación del salón\n" +
+      "5️⃣ Agendar una cita\n6️⃣ Cancelar o reprogramar\n7️⃣ Promociones del mes\n8️⃣ Hablar con una asesora\n\n¿En qué te ayudo hoy?",
     awayMessage:
       "Gracias por escribir a *Glam Nails Maturín* 💅. En este momento estamos fuera de horario " +
       "(atendemos martes a sábado, 9:00 am - 5:00 pm). Tu mensaje quedó registrado y una asesora te " +
-      "responderá apenas abramos.",
+      "responderá a primera hora.",
     businessHoursStart: "09:00",
     businessHoursEnd: "17:00",
-    businessDays: ["tuesday", "wednesday", "thursday", "friday", "saturday"],
+    businessDays: JSON.stringify(["tuesday", "wednesday", "thursday", "friday", "saturday"]),
   });
-  console.log("bot_configuration OK");
+  console.log("✅ Configuración del bot OK");
 
-  // ── Reglas del bot (12) ─────────────────────────────────────────
+  // ── 4. Reglas del Bot (Optimizadas con prioridad y sin colisiones)
   await db.insert(botRules).values([
     {
-      name: "Saludo de bienvenida",
+      name: "Cancelar o reprogramar cita",
       triggerType: "keyword",
-      triggerValue: "hola, buenos días, buenas tardes, buenas noches, hey, hi, buenas",
+      triggerValue: "cancelar cita, cancelar mi cita, cancelar, reprogramar, cambiar cita, mover cita, no podre ir, no puedo ir, postergar, mover fecha, cambiar fecha, anular cita, anulacion",
       responseType: "text",
       responseContent:
-        "¡Hola! 💅 Bienvenida a *Glam Nails Maturín*. Puedo ayudarte con catálogo y precios, " +
-        "horario, ubicación, agendar/cancelar tu cita o promociones. ¿Qué necesitas?",
-      priority: 1,
+        "🔄 Entendido. Indícame tu nombre completo y la fecha de la cita que deseas cancelar o reprogramar. " +
+        "Una asesora lo confirmará en breve en el sistema.",
+      priority: 2, // Prioridad máxima en citas para evitar colisión con agendar
     },
     {
-      name: "Catálogo de servicios",
+      name: "Pago Móvil y anticipo",
       triggerType: "keyword",
-      triggerValue: "catálogo, catalogo, servicios, que servicios tienen, menu de servicios",
+      triggerValue: "pago movil, datos de pago, transferencia, comprobante, captura, anticipo, cuenta, banco, como pagar, banesco, pagar, bcv, tasa, tasa bcv, capture, datos bancarios, numero de cuenta, abono, abono de cita",
       responseType: "text",
       responseContent:
-        "💅 *Catálogo de Servicios:*\n\n" +
-        "✅ Manicure clásica\n✅ Manicure spa\n✅ Esmaltado semipermanente\n" +
-        "✅ Uñas acrílicas (esculpidas)\n✅ Uñas en gel (soft gel)\n✅ Pedicure spa\n✅ Diseño / nail art\n\n" +
-        "Escribe *precios* para ver las tarifas de cada servicio.",
-      priority: 2,
+        "💳 *Datos de Pago Móvil Glam Nails:*\n\n• Banco: Banesco (0134)\n• Teléfono: 0412-1234567\n• RIF: J-501234567\n• Anticipo para citas: $5 (a tasa oficial BCV)\n\nPor favor envíanos la captura o comprobante una vez realizada la operación.",
+      priority: 3,
     },
     {
       name: "Precios",
       triggerType: "keyword",
-      triggerValue: "precio, precios, cuanto cuesta, cuánto cuesta, tarifa, tarifas, cuanto vale",
+      triggerValue: "precio, precios, cuanto cuesta, tarifa, tarifas, cuanto vale, costo, costos, presupuesto, cotizacion, cuanto cobran, valor, a como estan, en cuanto sale",
       responseType: "text",
       responseContent:
-        "💰 *Tarifas:*\n\n" +
+        "💰 *Lista de Precios Oficial (Glam Nails):*\n\n" +
         "💅 Manicure clásica — $6\n💅 Manicure spa — $9\n✨ Esmaltado semipermanente — $10\n" +
-        "💎 Uñas acrílicas — $18\n💎 Uñas en gel — $16\n🦶 Pedicure spa — $10\n🎨 Nail art (por uña) — desde $1\n\n" +
-        "¿Te gustaría *agendar una cita*?",
-      priority: 3,
-    },
-    {
-      name: "Horario de atención",
-      triggerType: "keyword",
-      triggerValue: "horario, horarios, atienden, abren, cierran, a que hora",
-      responseType: "text",
-      responseContent:
-        "🕐 *Horario de Atención:*\n\n📅 Martes a Sábado: 9:00 am - 5:00 pm\n📅 Domingo y Lunes: Cerrado\n\n" +
-        "💬 El bot puede atenderte fuera de horario, pero las citas se confirman en horario laboral.",
+        "💎 Uñas acrílicas — $18\n💎 Uñas en gel — $16\n🦶 Pedicure spa — $10\n🎨 Nail art — desde $1\n\n" +
+        "Aceptamos Pago Móvil (tasa oficial BCV), efectivo y transferencias. ¿Deseas *agendar una cita*?",
       priority: 4,
-    },
-    {
-      name: "Ubicación",
-      triggerType: "keyword",
-      triggerValue: "ubicación, ubicacion, dirección, direccion, donde quedan, como llegar, dónde están",
-      responseType: "text",
-      responseContent:
-        "📍 *Nuestra ubicación:*\n\nAv. Bicentenario, C.C. Plaza Girasol, local 12, Maturín, Monagas.\n\n" +
-        "🚗 Contamos con estacionamiento cercano. ¿Deseas *agendar una cita*?",
-      priority: 5,
     },
     {
       name: "Agendar cita",
       triggerType: "keyword",
-      triggerValue: "cita, agendar, reservar, quiero una cita, sacar cita, apartar",
+      triggerValue: "agendar, reservar, quiero una cita, sacar cita, apartar, cita para, agendar cita, reservar cita, apartar cupo, quiero cita, hacer una cita, tienen cita, tienen disponible, disponibilidad, tienen turno, turno, quiero turno, agendame",
       responseType: "text",
       responseContent:
-        "📅 *¡Con gusto te agendamos!*\n\nCuéntame: 1) servicio deseado, 2) día y hora de tu preferencia, " +
-        "3) tu nombre.\n\nUna asesora confirmará la disponibilidad real y te dará la cita en breve. 💅",
+        "📅 *¡Con gusto te agendamos en Glam Nails!*\n\nPor favor indícame:\n1) Tu nombre\n2) Servicio que deseas\n3) Día y hora de tu preferencia\n\n" +
+        "Para apartar el cupo solicitamos un anticipo de $5 por Pago Móvil. ¡Te responderemos con la disponibilidad!",
+      priority: 5,
+    },
+    {
+      name: "Catálogo de servicios",
+      triggerType: "keyword",
+      triggerValue: "catalogo, servicios, que servicios tienen, menu de servicios, servicios disponibles, acrilico, acrilicas, acrilicos, unas acrilicas, gel, soft gel, kapping, bano de acrilico, semipermanente, esmalte, esmaltado, manicure, manicura, pedicure, pedicura, spa, disenos, esculpidas, unas, sistemas, postizas, que hacen, que ofrecen",
+      responseType: "text",
+      responseContent:
+        "💅 *Catálogo de Servicios:*\n\n" +
+        "✨ Manicure clásica ($6)\n✨ Manicure spa ($9)\n✨ Esmaltado semipermanente ($10)\n" +
+        "💎 Uñas acrílicas esculpidas ($18)\n💎 Uñas en gel soft gel ($16)\n🦶 Pedicure spa ($10)\n🎨 Nail art / diseño ($1+ por uña)\n\n" +
+        "Escribe *precios* para más detalles o *agendar* para apartar tu cupo.",
       priority: 6,
     },
     {
-      name: "Cancelar o reprogramar cita",
+      name: "Horario de atención",
       triggerType: "keyword",
-      triggerValue: "cancelar, reprogramar, cambiar cita, mover cita, cancelar cita",
+      triggerValue: "horario, horarios, atienden, abren, cierran, a que hora, cuando abren, que dias abren, que dias atienden, estan abiertas, estan abiertas hoy, abren hoy, hora de atencion, jornada",
       responseType: "text",
       responseContent:
-        "🔄 Entendido. Indícame tu nombre y la fecha de la cita que deseas cancelar o mover, y una " +
-        "asesora te confirmará el cambio a la brevedad.",
+        "🕐 *Horario de Atención en Salón:*\n\n📅 Martes a Sábado: 9:00 am - 5:00 pm\n📅 Domingo y Lunes: Cerrado (descanso del equipo)\n\n" +
+        "💬 Puedes escribirnos a cualquier hora; te responderemos apenas comience la jornada.",
       priority: 7,
+    },
+    {
+      name: "Ubicación",
+      triggerType: "keyword",
+      triggerValue: "ubicacion, direccion, donde quedan, como llegar, donde estan, estacionamiento, donde es, plaza girasol, bicentenario, como llego, en que parte estan, direccion exacta, referencia, centro comercial",
+      responseType: "text",
+      responseContent:
+        "📍 *Nuestra ubicación en Maturín:*\n\nAv. Bicentenario, C.C. Plaza Girasol, local 12, Maturín, Monagas.\n\n" +
+        "🚗 Contamos con estacionamiento vigilado y aire acondicionado. ¿Te gustaría agendar tu cita?",
+      priority: 8,
+    },
+    {
+      name: "Saludo de bienvenida",
+      triggerType: "keyword",
+      triggerValue: "hola, buenos dias, buenas tardes, buenas noches, hey, hi, buenas, saludos, que tal, buen dia, hello",
+      responseType: "text",
+      responseContent:
+        "¡Hola! 💅 Bienvenida a *Glam Nails Maturín*. Puedo ayudarte con nuestro catálogo, precios, " +
+        "horario, ubicación, agendar o cancelar tu cita. ¿En qué podemos consentirte hoy?",
+      priority: 90, // Prioridad baja para que consultas específicas con saludo ("hola, quiero cancelar...") no sean interceptadas
     },
     {
       name: "Promociones",
       triggerType: "keyword",
-      triggerValue: "promocion, promoción, promociones, oferta, ofertas, descuento",
+      triggerValue: "promocion, promociones, oferta, ofertas, descuento, promo",
       responseType: "text",
       responseContent:
-        "🎉 *Promoción del mes:* 15% de descuento en uñas acrílicas o en gel de martes a jueves. " +
-        "¡Escríbenos para agendar tu cita y aprovecharla!",
-      priority: 8,
+        "🎉 *Promoción de la Semana:* 15% de descuento en Uñas Acrílicas y Gel los días martes y miércoles. " +
+        "¡Escríbenos para agendar y asegurar tu descuento!",
+      priority: 9,
     },
     {
       name: "Hablar con asesora",
       triggerType: "keyword",
-      triggerValue: "asesora, humano, persona, hablar con alguien, agente",
+      triggerValue: "asesora, humano, persona, hablar con alguien, recepcionista, agente",
       responseType: "text",
       responseContent:
-        "👩‍💼 Te comunico con una de nuestras asesoras. Por favor espera un momento, en breve te responderá. 💅",
-      priority: 9,
+        "👩‍💼 Te estoy comunicando con Valentina en recepción. He silenciado el bot momentáneamente para que te atienda personalmente. 💅",
+      priority: 10,
     },
     {
       name: "Despedida",
       triggerType: "keyword",
-      triggerValue: "gracias, adiós, adios, hasta luego, bye, nos vemos, chao",
+      triggerValue: "gracias, adios, hasta luego, bye, nos vemos, chao, feliz dia",
       responseType: "text",
       responseContent:
-        "¡Gracias por escribirnos! 💅 Te esperamos en *Glam Nails Maturín*. ¡Que tengas un lindo día! 😊",
-      priority: 10,
+        "¡Gracias a ti por escribir a *Glam Nails Maturín*! 💅 Te esperamos pronto. ¡Que tengas un hermoso día! ✨",
+      priority: 11,
     },
     {
       name: "Ayuda / menú",
       triggerType: "keyword",
-      triggerValue: "ayuda, help, menu, menú, opciones",
+      triggerValue: "ayuda, help, menu, opciones, comandos",
       responseType: "text",
       responseContent:
-        "🔧 *Menú de ayuda* — escribe una palabra clave:\n\n" +
-        "• *catálogo* — servicios disponibles\n• *precios* — tarifas\n• *horario* — atención\n" +
-        "• *ubicación* — cómo llegar\n• *cita* — agendar\n• *cancelar* — cancelar o mover tu cita\n" +
-        "• *promociones* — ofertas vigentes\n• *asesora* — hablar con una persona",
-      priority: 11,
+        "🔧 *Opciones rápidas:* Escribe una palabra clave:\n\n" +
+        "• *catálogo* — servicios\n• *precios* — tarifas\n• *horario* — jornada\n" +
+        "• *ubicación* — dirección\n• *pago móvil* — datos de cuenta\n• *agendar* — reservar cita\n• *cancelar* — modificar cita\n" +
+        "• *promociones* — ofertas\n• *asesora* — atención humana",
+      priority: 12,
     },
     {
       name: "Respuesta por defecto",
@@ -164,20 +250,19 @@ async function seed() {
       triggerValue: "*",
       responseType: "text",
       responseContent:
-        "No entendí muy bien tu mensaje 😅. Escribe *ayuda* para ver las opciones, o *asesora* para " +
-        "hablar directamente con una persona.",
+        "No logré comprender del todo tu mensaje 😅. Puedes escribir *ayuda* para ver las opciones disponibles, o *asesora* para que una de nuestras chicas te responda directamente.",
       priority: 999,
     },
   ]);
-  console.log("bot_rules OK (12 reglas)");
+  console.log("✅ 13 Reglas del bot configuradas y optimizadas");
 
-  // ── Plantillas de mensajes ──────────────────────────────────────
+  // ── 5. Plantillas de Mensajes ─────────────────────────────────
   await db.insert(messageTemplates).values([
     {
       name: "bienvenida_clienta",
       category: "utility",
       language: "es",
-      content: "¡Hola {{1}}! 💅 Bienvenida a Glam Nails Maturín. Gracias por escribirnos.",
+      content: "¡Hola {{1}}! 💅 Bienvenida a Glam Nails Maturín. Es un placer atenderte.",
       status: "approved",
     },
     {
@@ -185,39 +270,55 @@ async function seed() {
       category: "utility",
       language: "es",
       content:
-        "✅ *Cita Confirmada*\n\nHola {{1}}, tu cita para {{2}} quedó agendada el {{3}} a las {{4}}. ¡Te esperamos!",
+        "✅ *Cita Confirmada en Glam Nails*\n\nHola {{1}}, tu cita para *{{2}}* está reservada para el *{{3}}* a las *{{4}}*. ¡Te esperamos en C.C. Plaza Girasol!",
       status: "approved",
     },
     {
       name: "recordatorio_cita",
       category: "utility",
       language: "es",
-      content: "⏰ Recordatorio: {{1}}, tu cita de {{2}} es mañana {{3}} a las {{4}}. ¡No faltes!",
+      content: "⏰ Recordatorio: {{1}}, mañana tienes tu cita de {{2}} a las {{3}}. Por favor llega 5 min antes. ¡Nos vemos!",
       status: "approved",
     },
     {
-      name: "promocion_temporada",
-      category: "marketing",
+      name: "solicitud_pago_movil",
+      category: "utility",
       language: "es",
-      content: "🎉 {{1}}, tenemos una promoción especial: {{2}}. ⏰ Válida hasta {{3}}. ¡Agenda ya!",
-      status: "pending",
+      content:
+        "💳 *Datos de Pago Móvil Glam Nails:*\n\nBanco: Banesco (0134)\nTeléfono: 0412-1234567\nRIF: J-501234567\n\nPor favor envíanos la captura una vez realizada la transferencia.",
+      status: "approved",
     },
   ]);
-  console.log("message_templates OK (4 plantillas)");
+  console.log("✅ Plantillas de mensaje creadas");
 
-  // ── Contactos ────────────────────────────────────────────────────
-  await db.insert(contacts).values([
-    { phoneNumber: "+584121234567", name: "Génesis Rondón", email: "genesis.rondon@email.com", notes: "Prefiere uñas acrílicas, diseño francés" },
-    { phoneNumber: "+584241234568", name: "Marielys Guzmán", email: "marielys.guzman@email.com", notes: "Cliente frecuente, siempre pide gel" },
-    { phoneNumber: "+584161234569", name: "Oriana Salazar", email: "oriana.salazar@email.com", notes: "Consultó promociones de temporada" },
-    { phoneNumber: "+584121234570", name: "Yumary Blanco", email: "yumary.blanco@email.com", notes: "Nueva clienta, pidió catálogo completo" },
-    { phoneNumber: "+584261234571", name: "Carla Millán", email: "carla.millan@email.com", notes: "Reprogramó su cita de pedicure spa" },
-  ]);
-  console.log("contacts OK (5 contactos)");
+  // ── 6. Contactos ──────────────────────────────────────────────
+  const seededContacts = await db
+    .insert(contacts)
+    .values([
+      {
+        phoneNumber: "+584121234567",
+        name: "Génesis Rondón",
+        email: "genesis.rondon@email.com",
+        notes: "Prefiere acrílicas número 3 con efecto almendrado y diseño francés.",
+      },
+      {
+        phoneNumber: "+584241234568",
+        name: "Marielys Guzmán",
+        email: "marielys.guzman@email.com",
+        notes: "Clienta frecuente, siempre pide Soft Gel y esmaltado nude.",
+      },
+      {
+        phoneNumber: "+584161234569",
+        name: "Oriana Salazar",
+        email: "oriana.salazar@email.com",
+        notes: "Preguntó por promociones de manicure spa.",
+      },
+    ])
+    .returning();
+  console.log(`✅ Contactos creados (${seededContacts.length} contactos)`);
 
-  // ── Conversaciones de ejemplo ─────────────────────────────────────
-  // Flujo: consulta -> catálogo/precio -> solicitud de cita -> confirmación (escalado a asesora)
-  const convResult = await db
+  // ── 7. Conversaciones y Mensajes de Ejemplo ───────────────────
+  const seededConvs = await db
     .insert(conversations)
     .values([
       {
@@ -225,64 +326,122 @@ async function seed() {
         contactName: "Génesis Rondón",
         status: "active",
         unreadCount: 0,
-        lastMessage: "Perfecto, ahí estaré. Gracias!",
+        lastMessage: "Perfecto, ahí estaré el viernes. Gracias!",
         lastMessageAt: new Date(Date.now() - 20 * 60000),
+        assignedTo: seededUsers[1].id,
+        isBotMuted: false,
       },
       {
         phoneNumber: "+584241234568",
         contactName: "Marielys Guzmán",
         status: "pending",
         unreadCount: 1,
-        lastMessage: "¿Tienen espacio este sábado en la tarde?",
+        lastMessage: "¿Tienen espacio este sábado a las 2:00 pm?",
         lastMessageAt: new Date(Date.now() - 5 * 60000),
-      },
-      {
-        phoneNumber: "+584161234569",
-        contactName: "Oriana Salazar",
-        status: "active",
-        unreadCount: 0,
-        lastMessage: "Genial, escribo cuando quiera agendar",
-        lastMessageAt: new Date(Date.now() - 90 * 60000),
+        assignedTo: seededUsers[1].id,
+        isBotMuted: true,
       },
     ])
-    .$returningId();
-  console.log("conversations OK");
+    .returning();
 
-  const c0 = convResult[0].id;
-  const c1 = convResult[1].id;
-  const c2 = convResult[2].id;
+  const c0 = seededConvs[0].id;
+  const c1 = seededConvs[1].id;
 
   await db.insert(messages).values([
-    // Conversación 1: catálogo -> precio -> cita -> confirmación por asesora
-    { conversationId: c0, sender: "customer", content: "Hola, buenas tardes", status: "read", createdAt: new Date(Date.now() - 60 * 60000) },
-    { conversationId: c0, sender: "bot", content: "¡Hola! 💅 Bienvenida a Glam Nails Maturín. ¿En qué te ayudo hoy?", status: "read", createdAt: new Date(Date.now() - 59 * 60000) },
-    { conversationId: c0, sender: "customer", content: "¿Qué servicios tienen?", status: "read", createdAt: new Date(Date.now() - 55 * 60000) },
-    { conversationId: c0, sender: "bot", content: "💅 Catálogo: manicure clásica/spa, esmaltado semipermanente, uñas acrílicas, uñas en gel, pedicure spa y nail art.", status: "read", createdAt: new Date(Date.now() - 54 * 60000) },
-    { conversationId: c0, sender: "customer", content: "¿Cuánto cuesta el acrílico?", status: "read", createdAt: new Date(Date.now() - 50 * 60000) },
-    { conversationId: c0, sender: "bot", content: "💎 Uñas acrílicas — $18. ¿Deseas agendar una cita?", status: "read", createdAt: new Date(Date.now() - 49 * 60000) },
-    { conversationId: c0, sender: "customer", content: "Sí, quiero una cita para el viernes en la mañana, diseño francés", status: "read", createdAt: new Date(Date.now() - 45 * 60000) },
-    { conversationId: c0, sender: "bot", content: "📅 Perfecto, te comunico con una asesora para confirmar la disponibilidad real del viernes en la mañana.", status: "read", createdAt: new Date(Date.now() - 44 * 60000) },
-    { conversationId: c0, sender: "agent", content: "Hola Génesis, soy Andrea de Glam Nails. Tenemos espacio el viernes 9:30 am para uñas acrílicas con diseño francés, ¿te queda bien?", status: "read", createdAt: new Date(Date.now() - 30 * 60000) },
-    { conversationId: c0, sender: "customer", content: "Sí, perfecto", status: "read", createdAt: new Date(Date.now() - 25 * 60000) },
-    { conversationId: c0, sender: "agent", content: "✅ Cita confirmada: viernes 9:30 am, uñas acrílicas diseño francés. ¡Te esperamos!", status: "read", createdAt: new Date(Date.now() - 21 * 60000) },
-    { conversationId: c0, sender: "customer", content: "Perfecto, ahí estaré. Gracias!", status: "delivered", createdAt: new Date(Date.now() - 20 * 60000) },
-
-    // Conversación 2: pide horario/disponibilidad -> pendiente de asesora
-    { conversationId: c1, sender: "customer", content: "Hola", status: "read", createdAt: new Date(Date.now() - 15 * 60000) },
-    { conversationId: c1, sender: "bot", content: "¡Hola! 💅 Bienvenida a Glam Nails Maturín. ¿En qué te ayudo hoy?", status: "read", createdAt: new Date(Date.now() - 14 * 60000) },
-    { conversationId: c1, sender: "customer", content: "¿Tienen espacio este sábado en la tarde?", status: "delivered", createdAt: new Date(Date.now() - 5 * 60000) },
-    { conversationId: c1, sender: "bot", content: "📅 Para confirmar disponibilidad real del sábado te comunico con una asesora en un momento.", status: "delivered", createdAt: new Date(Date.now() - 4 * 60000) },
-
-    // Conversación 3: consulta de promociones y ubicación, resuelta 100% por el bot
-    { conversationId: c2, sender: "customer", content: "Buenas, ¿tienen alguna promoción?", status: "read", createdAt: new Date(Date.now() - 100 * 60000) },
-    { conversationId: c2, sender: "bot", content: "🎉 Promoción del mes: 15% de descuento en uñas acrílicas o en gel de martes a jueves.", status: "read", createdAt: new Date(Date.now() - 99 * 60000) },
-    { conversationId: c2, sender: "customer", content: "¿Dónde quedan ubicadas?", status: "read", createdAt: new Date(Date.now() - 95 * 60000) },
-    { conversationId: c2, sender: "bot", content: "📍 Av. Bicentenario, C.C. Plaza Girasol, local 12, Maturín, Monagas.", status: "read", createdAt: new Date(Date.now() - 94 * 60000) },
-    { conversationId: c2, sender: "customer", content: "Genial, escribo cuando quiera agendar", status: "read", createdAt: new Date(Date.now() - 90 * 60000) },
+    {
+      conversationId: c0,
+      sender: "customer",
+      content: "Hola, buenas tardes",
+      status: "read",
+      createdAt: new Date(Date.now() - 60 * 60000),
+    },
+    {
+      conversationId: c0,
+      sender: "bot",
+      content: "¡Hola! 💅 Bienvenida a Glam Nails Maturín. ¿En qué te ayudo hoy?",
+      status: "read",
+      createdAt: new Date(Date.now() - 59 * 60000),
+    },
+    {
+      conversationId: c0,
+      sender: "customer",
+      content: "¿Cuánto cuesta el acrílico?",
+      status: "read",
+      createdAt: new Date(Date.now() - 50 * 60000),
+    },
+    {
+      conversationId: c0,
+      sender: "bot",
+      content: "💎 Uñas acrílicas — $18. ¿Deseas agendar una cita?",
+      status: "read",
+      createdAt: new Date(Date.now() - 49 * 60000),
+    },
+    {
+      conversationId: c0,
+      sender: "customer",
+      content: "Aquí les dejo la captura del pago móvil del anticipo",
+      messageType: "image",
+      mediaUrl: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=500",
+      status: "read",
+      createdAt: new Date(Date.now() - 40 * 60000),
+    },
+    {
+      conversationId: c0,
+      sender: "agent",
+      content: "¡Pago verificado Génesis! Cita confirmada para el viernes 9:30 am. 💅",
+      status: "read",
+      createdAt: new Date(Date.now() - 30 * 60000),
+    },
+    {
+      conversationId: c1,
+      sender: "customer",
+      content: "¿Tienen espacio este sábado a las 2:00 pm?",
+      status: "delivered",
+      createdAt: new Date(Date.now() - 5 * 60000),
+    },
   ]);
-  console.log("messages OK");
+  console.log("✅ Mensajes de prueba sembrados (con imagen de comprobante)");
 
-  console.log("\n✅ Glam Nails Maturín sembrado exitosamente!");
+  // ── 8. Citas Iniciales ────────────────────────────────────────
+  const nextFriday = new Date();
+  nextFriday.setDate(nextFriday.getDate() + ((5 + 7 - nextFriday.getDay()) % 7 || 7));
+  nextFriday.setHours(9, 30, 0, 0);
+
+  const nextSaturday = new Date();
+  nextSaturday.setDate(nextSaturday.getDate() + ((6 + 7 - nextSaturday.getDay()) % 7 || 7));
+  nextSaturday.setHours(14, 0, 0, 0);
+
+  await db.insert(appointments).values([
+    {
+      conversationId: c0,
+      contactId: seededContacts[0].id,
+      serviceId: seededServices[3].id, // Uñas Acrílicas
+      clientName: "Génesis Rondón",
+      clientPhone: "+584121234567",
+      scheduledAt: nextFriday,
+      status: "confirmada",
+      notes: "Acrílicas número 3 diseño francés, anticipo recibido.",
+      paymentProofUrl: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=500",
+    },
+    {
+      conversationId: c1,
+      contactId: seededContacts[1].id,
+      serviceId: seededServices[4].id, // Soft Gel
+      clientName: "Marielys Guzmán",
+      clientPhone: "+584241234568",
+      scheduledAt: nextSaturday,
+      status: "pendiente",
+      notes: "Consulta cupo para soft gel sábado 2:00 pm.",
+    },
+  ]);
+  console.log("✅ Citas sembradas (1 confirmada, 1 pendiente)");
+
+  console.log("\n🌸 Glam Nails Maturín sembrado exitosamente en PostgreSQL!");
 }
 
-seed().catch(console.error);
+if (process.argv[1]?.replace(/\\/g, "/").includes("seed-salon-unas")) {
+  seedGlamNails().catch((err) => {
+    console.error("Error al sembrar base de datos:", err);
+    process.exit(1);
+  });
+}

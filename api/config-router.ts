@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createRouter, publicQuery } from "./middleware";
+import { createRouter, authedQuery, adminQuery } from "./middleware";
 import {
   getBotConfiguration,
   updateBotConfiguration,
@@ -9,9 +9,9 @@ import {
 
 export const configRouter = createRouter({
   // Bot Configuration
-  getBotConfig: publicQuery.query(() => getBotConfiguration()),
+  getBotConfig: authedQuery.query(() => getBotConfiguration()),
 
-  updateBotConfig: publicQuery
+  updateBotConfig: authedQuery
     .input(
       z.object({
         id: z.number(),
@@ -24,14 +24,18 @@ export const configRouter = createRouter({
       })
     )
     .mutation(({ input }) => {
-      const { id, ...data } = input;
-      return updateBotConfiguration(id, data);
+      const { id, businessDays, ...data } = input;
+      const daysStr = typeof businessDays === "string" ? businessDays : JSON.stringify(businessDays);
+      return updateBotConfiguration(id, {
+        ...data,
+        businessDays: daysStr,
+      });
     }),
 
   // WhatsApp Configuration
-  getWhatsappConfig: publicQuery.query(() => getWhatsappConfig()),
+  getWhatsappConfig: adminQuery.query(() => getWhatsappConfig()),
 
-  updateWhatsappConfig: publicQuery
+  updateWhatsappConfig: adminQuery
     .input(
       z.object({
         phoneNumberId: z.string().optional(),

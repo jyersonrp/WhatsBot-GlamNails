@@ -14,19 +14,19 @@ export async function getBotConfiguration() {
   const db = getDb();
   const configs = await db.query.botConfiguration.findMany({ limit: 1 });
   if (configs.length === 0) {
-    // Create default config
-    const result = await db
+    const rows = await db
       .insert(botConfiguration)
       .values({
         welcomeMessage:
-          "¡Hola! 👋 Bienvenido a nuestro servicio de atención al cliente. ¿En qué puedo ayudarte hoy?",
+          "¡Hola! 💅 Bienvenida a *Glam Nails Maturín*. ¿En qué te ayudo hoy?",
         awayMessage:
-          "Gracias por contactarnos. Nuestro horario de atención es de lunes a viernes de 9:00 a 18:00. Te responderemos pronto.",
+          "Gracias por escribir a *Glam Nails Maturín* 💅. Nuestro horario de atención es de martes a sábado de 9:00 a 17:00.",
+        businessHoursStart: "09:00",
+        businessHoursEnd: "17:00",
+        businessDays: JSON.stringify(["tuesday", "wednesday", "thursday", "friday", "saturday"]),
       })
-      .$returningId();
-    return db.query.botConfiguration.findFirst({
-      where: eq(botConfiguration.id, result[0].id),
-    });
+      .returning();
+    return rows[0];
   }
   return configs[0];
 }
@@ -36,13 +36,15 @@ export async function updateBotConfiguration(
   data: Partial<InsertBotConfiguration>
 ) {
   const db = getDb();
-  await db
+  const rows = await db
     .update(botConfiguration)
-    .set(data)
-    .where(eq(botConfiguration.id, id));
-  return db.query.botConfiguration.findFirst({
-    where: eq(botConfiguration.id, id),
-  });
+    .set({
+      ...data,
+      updatedAt: new Date(),
+    })
+    .where(eq(botConfiguration.id, id))
+    .returning();
+  return rows[0];
 }
 
 // ─── WhatsApp Config ───────────────────────────────────────────────
@@ -58,24 +60,27 @@ export async function updateWhatsappConfig(
   data: Partial<InsertWhatsappConfig>
 ) {
   const db = getDb();
-  await db.update(whatsappConfig).set(data).where(eq(whatsappConfig.id, id));
-  return db.query.whatsappConfig.findFirst({
-    where: eq(whatsappConfig.id, id),
-  });
+  const rows = await db
+    .update(whatsappConfig)
+    .set({
+      ...data,
+      updatedAt: new Date(),
+    })
+    .where(eq(whatsappConfig.id, id))
+    .returning();
+  return rows[0];
 }
 
 export async function createOrUpdateWhatsappConfig(
   data: Partial<InsertWhatsappConfig>
 ) {
-  const db = getDb();
   const existing = await getWhatsappConfig();
   if (existing) {
     return updateWhatsappConfig(existing.id, data);
   }
-  const result = await db.insert(whatsappConfig).values(data).$returningId();
-  return db.query.whatsappConfig.findFirst({
-    where: eq(whatsappConfig.id, result[0].id),
-  });
+  const db = getDb();
+  const rows = await db.insert(whatsappConfig).values(data).returning();
+  return rows[0];
 }
 
 // ─── Webhook Logs ──────────────────────────────────────────────────
@@ -85,10 +90,13 @@ export async function createWebhookLog(
   payload: Record<string, unknown>
 ) {
   const db = getDb();
-  return db.insert(webhookLogs).values({
+  const payloadStr = typeof payload === "string" ? payload : JSON.stringify(payload);
+  const rows = await db.insert(webhookLogs).values({
     eventType,
-    payload,
-  });
+    payload: payloadStr,
+    status: "received",
+  }).returning();
+  return rows[0];
 }
 
 export async function getRecentWebhookLogs(limit: number = 50) {

@@ -8,6 +8,8 @@ import { contactRouter } from "./contact-router";
 import { configRouter } from "./config-router";
 import { dashboardRouter } from "./dashboard-router";
 import { webhookRouter } from "./webhook-router";
+import { appointmentRouter } from "./appointment-router";
+import { serviceRouter } from "./service-router";
 
 export const appRouter = createRouter({
   ping: publicQuery.query(() => ({ ok: true, ts: Date.now() })),
@@ -20,6 +22,8 @@ export const appRouter = createRouter({
   config: configRouter,
   dashboard: dashboardRouter,
   webhook: webhookRouter,
+  appointment: appointmentRouter,
+  service: serviceRouter,
 });
 
 export type AppRouter = typeof appRouter;

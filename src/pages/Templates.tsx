@@ -25,6 +25,7 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -47,9 +48,21 @@ const statusConfig: Record<string, { icon: typeof CheckCircle2; color: string; l
   rejected: { icon: AlertCircle, color: "text-red-600", label: "Rechazada" },
 };
 
+interface TemplateItem {
+  id: number;
+  name: string;
+  category: "marketing" | "utility" | "authentication";
+  language: string;
+  content: string;
+  variables?: string | null;
+  status: "draft" | "pending" | "approved" | "rejected";
+  whatsappTemplateId?: string | null;
+  createdAt: Date | string;
+}
+
 export default function Templates() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingTemplate, setEditingTemplate] = useState<any>(null);
+  const [editingTemplate, setEditingTemplate] = useState<TemplateItem | null>(null);
 
   const utils = trpc.useUtils();
   const { data: templates, isLoading } = trpc.template.list.useQuery();
@@ -102,7 +115,7 @@ export default function Templates() {
     }
   };
 
-  const duplicateTemplate = (t: any) => {
+  const duplicateTemplate = (t: TemplateItem) => {
     createTemplate.mutate({
       name: `${t.name}_copia`,
       category: t.category,
@@ -112,24 +125,24 @@ export default function Templates() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-[#0F172A]">
-            Plantillas de Mensajes
+          <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
+            Plantillas de Mensajes <Sparkles className="w-5 h-5 text-rose-500" />
           </h1>
-          <p className="text-sm text-[#64748B] mt-1">
-            Gestiona las plantillas aprobadas para envío masivo
+          <p className="text-sm text-slate-500 mt-0.5">
+            Mensajes predefinidos y respuestas rápidas para la clientela de Glam Nails Maturín.
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button
-              className="bg-[#10B981] hover:bg-[#059669] text-white"
+              className="bg-rose-600 hover:bg-rose-700 text-white font-semibold gap-1.5 shadow-sm"
               onClick={() => setEditingTemplate(null)}
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-4 h-4 mr-1" />
               Nueva Plantilla
             </Button>
           </DialogTrigger>
@@ -192,7 +205,7 @@ export default function Templates() {
                 </Button>
                 <Button
                   type="submit"
-                  className="bg-[#10B981] hover:bg-[#059669] text-white"
+                  className="bg-rose-600 hover:bg-rose-700 text-white font-medium"
                 >
                   {editingTemplate ? "Guardar" : "Crear Plantilla"}
                 </Button>
@@ -279,21 +292,39 @@ export default function Templates() {
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-[#94A3B8]">
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                    <span className="text-xs text-slate-400 font-mono">
                       {template.language === "es" ? "Español" : template.language}
                     </span>
-                    {template.status === "draft" && (
+
+                    <div className="flex items-center gap-1.5">
                       <Button
-                        variant="outline"
+                        type="button"
+                        variant="ghost"
                         size="sm"
-                        className="h-7 text-xs"
-                        onClick={() => submitTemplate.mutate({ id: template.id })}
+                        className="h-7 text-xs text-slate-600 hover:text-slate-900 gap-1"
+                        onClick={() => {
+                          navigator.clipboard.writeText(template.content);
+                          toast.success("Texto de plantilla copiado");
+                        }}
+                        title="Copiar texto de la plantilla"
                       >
-                        <Send className="w-3 h-3 mr-1" />
-                        Enviar a aprobación
+                        <Copy className="w-3.5 h-3.5 text-slate-500" />
+                        <span>Copiar texto</span>
                       </Button>
-                    )}
+
+                      {template.status === "draft" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                          onClick={() => submitTemplate.mutate({ id: template.id })}
+                        >
+                          <Send className="w-3 h-3 mr-1" />
+                          Aprobación
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>

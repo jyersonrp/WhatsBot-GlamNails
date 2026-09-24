@@ -62,7 +62,7 @@ async function seed() {
     { phoneNumber: "+34634567890", contactName: "Ana Martínez", status: "active", unreadCount: 1, lastMessage: "¿Cuál es el horario de atención?", lastMessageAt: new Date(Date.now() - 60 * 60000) },
     { phoneNumber: "+34645678901", contactName: "Pedro Sánchez", status: "active", unreadCount: 3, lastMessage: "Necesito hacer un pedido urgente", lastMessageAt: new Date(Date.now() - 3 * 60 * 60000) },
     { phoneNumber: "+34656789012", contactName: "Laura Torres", status: "active", unreadCount: 1, lastMessage: "Mi pedido no ha llegado todavía", lastMessageAt: new Date(Date.now() - 5 * 60 * 60000) },
-  ]).$returningId();
+  ]).returning();
   console.log("Conversations OK");
 
   // Messages

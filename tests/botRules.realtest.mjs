@@ -1,38 +1,58 @@
 // Prueba funcional real del motor de reglas del WhatsBot (Glam Nails Maturín)
-// - La función matchRule() de abajo es una copia EXACTA, línea por línea,
-//   del switch-case de findMatchingRule() en api/queries/botRules.ts
-//   (se omite únicamente la consulta a la base de datos, que en producción
-//   entrega este mismo arreglo `rules` ya ordenado por prioridad).
-// - El arreglo SEED_RULES es una copia EXACTA de las 12 reglas insertadas
-//   por db/seed-salon-unas.ts (mismos triggerType, triggerValue y priority).
-// Ejecutar con: node botRules.realtest.mjs
+// Actualizado con normalización de diacríticos y tildes (Phase 5)
+// Ejecutar con: node tests/botRules.realtest.mjs
+
+function normalizeText(text) {
+  if (!text) return "";
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[¿?¡!.,;:()\-_'"]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 function matchRule(message, rules) {
-  const lowerMessage = message.toLowerCase().trim();
+  const normMessage = normalizeText(message);
+  if (!normMessage) return null;
 
-  for (const rule of rules) {
-    const triggerValue = rule.triggerValue.toLowerCase();
+  const sortedRules = [...rules]
+    .filter((r) => r.isActive !== false && r.triggerType !== "default")
+    .sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+
+  for (const rule of sortedRules) {
+    const triggerValue = rule.triggerValue;
 
     switch (rule.triggerType) {
-      case "exact":
-        if (lowerMessage === triggerValue) return rule;
-        break;
-      case "keyword": {
-        const keywords = triggerValue.split(",").map((k) => k.trim());
-        if (keywords.some((kw) => lowerMessage.includes(kw))) return rule;
+      case "exact": {
+        if (normMessage === normalizeText(triggerValue)) return rule;
         break;
       }
-      case "contains":
-        if (lowerMessage.includes(triggerValue)) return rule;
+      case "keyword": {
+        const rawKeywords = triggerValue.split(/[,;]/).map((k) => k.trim());
+        const keywords = rawKeywords
+          .map((k) => normalizeText(k))
+          .filter(Boolean)
+          .sort((a, b) => b.length - a.length);
+
+        const paddedMessage = ` ${normMessage} `;
+        if (keywords.some((kw) => paddedMessage.includes(` ${kw} `))) return rule;
         break;
-      case "regex":
+      }
+      case "contains": {
+        if (normMessage.includes(normalizeText(triggerValue))) return rule;
+        break;
+      }
+      case "regex": {
         try {
           const regex = new RegExp(triggerValue, "i");
-          if (regex.test(message)) return rule;
+          if (regex.test(message) || regex.test(normMessage)) return rule;
         } catch {
           continue;
         }
         break;
+      }
       case "default":
         break;
     }
@@ -44,17 +64,18 @@ function matchRule(message, rules) {
 }
 
 const SEED_RULES = [
-  { name: "Saludo de bienvenida", triggerType: "keyword", triggerValue: "hola, buenos días, buenas tardes, buenas noches, hey, hi, buenas", priority: 1 },
-  { name: "Catálogo de servicios", triggerType: "keyword", triggerValue: "catálogo, catalogo, servicios, que servicios tienen, menu de servicios", priority: 2 },
-  { name: "Precios", triggerType: "keyword", triggerValue: "precio, precios, cuanto cuesta, cuánto cuesta, tarifa, tarifas, cuanto vale", priority: 3 },
-  { name: "Horario de atención", triggerType: "keyword", triggerValue: "horario, horarios, atienden, abren, cierran, a que hora", priority: 4 },
-  { name: "Ubicación", triggerType: "keyword", triggerValue: "ubicación, ubicacion, dirección, direccion, donde quedan, como llegar, dónde están", priority: 5 },
-  { name: "Agendar cita", triggerType: "keyword", triggerValue: "cita, agendar, reservar, quiero una cita, sacar cita, apartar", priority: 6 },
-  { name: "Cancelar o reprogramar cita", triggerType: "keyword", triggerValue: "cancelar, reprogramar, cambiar cita, mover cita, cancelar cita", priority: 7 },
-  { name: "Promociones", triggerType: "keyword", triggerValue: "promocion, promoción, promociones, oferta, ofertas, descuento", priority: 8 },
-  { name: "Hablar con asesora", triggerType: "keyword", triggerValue: "asesora, humano, persona, hablar con alguien, agente", priority: 9 },
-  { name: "Despedida", triggerType: "keyword", triggerValue: "gracias, adiós, adios, hasta luego, bye, nos vemos, chao", priority: 10 },
-  { name: "Ayuda / menú", triggerType: "keyword", triggerValue: "ayuda, help, menu, menú, opciones", priority: 11 },
+  { name: "Saludo de bienvenida", triggerType: "keyword", triggerValue: "hola, buenos dias, buenas tardes, buenas noches, hey, hi, buenas, saludos", priority: 1 },
+  { name: "Catálogo de servicios", triggerType: "keyword", triggerValue: "catalogo, servicios, que servicios tienen, menu de servicios, servicios disponibles", priority: 2 },
+  { name: "Precios", triggerType: "keyword", triggerValue: "precio, precios, cuanto cuesta, tarifa, tarifas, cuanto vale, costo, costos", priority: 3 },
+  { name: "Horario de atención", triggerType: "keyword", triggerValue: "horario, horarios, atienden, abren, cierran, a que hora, cuando abren", priority: 4 },
+  { name: "Ubicación", triggerType: "keyword", triggerValue: "ubicacion, direccion, donde quedan, como llegar, donde estan, estacionamiento", priority: 5 },
+  { name: "Pago Móvil y anticipo", triggerType: "keyword", triggerValue: "pago movil, datos de pago, transferencia, comprobante, captura, anticipo, cuenta, banco, como pagar", priority: 6 },
+  { name: "Cancelar o reprogramar cita", triggerType: "keyword", triggerValue: "cancelar cita, cancelar mi cita, cancelar, reprogramar, cambiar cita, mover cita", priority: 7 },
+  { name: "Agendar cita", triggerType: "keyword", triggerValue: "agendar, reservar, quiero una cita, sacar cita, apartar, cita para", priority: 8 },
+  { name: "Promociones", triggerType: "keyword", triggerValue: "promocion, promociones, oferta, ofertas, descuento, promo", priority: 9 },
+  { name: "Hablar con asesora", triggerType: "keyword", triggerValue: "asesora, humano, persona, hablar con alguien, recepcionista, agente", priority: 10 },
+  { name: "Despedida", triggerType: "keyword", triggerValue: "gracias, adios, hasta luego, bye, nos vemos, chao, feliz dia", priority: 11 },
+  { name: "Ayuda / menú", triggerType: "keyword", triggerValue: "ayuda, help, menu, opciones, comandos", priority: 12 },
   { name: "Respuesta por defecto", triggerType: "default", triggerValue: "*", priority: 999 },
 ];
 
@@ -71,6 +92,11 @@ const CASES = [
   { msg: "Muchas gracias, hasta luego", expected: "Despedida" },
   { msg: "Cuánto vale el gel", expected: "Precios" },
   { msg: "Quiero cancelar mi cita", expected: "Cancelar o reprogramar cita" },
+  { msg: "¿Cuáles son los datos de pago móvil?", expected: "Pago Móvil y anticipo" },
+  { msg: "Aquí está la captura del comprobante", expected: "Pago Móvil y anticipo" },
+  { msg: "hice el tramite de registro", expected: "Respuesta por defecto" },
+  { msg: "muchas felicitaciones por la inauguracion", expected: "Respuesta por defecto" },
+  { msg: "aprecio mucho la atencion", expected: "Respuesta por defecto" },
 ];
 
 console.log("# Prueba funcional real del motor de reglas — WhatsBot Glam Nails Maturín\n");

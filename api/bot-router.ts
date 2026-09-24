@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createRouter, publicQuery } from "./middleware";
+import { createRouter, authedQuery, adminQuery } from "./middleware";
 import {
   findAllBotRules,
   findBotRuleById,
@@ -11,15 +11,19 @@ import {
 } from "./queries/botRules";
 
 export const botRouter = createRouter({
-  list: publicQuery
+  list: authedQuery
     .input(z.object({ activeOnly: z.boolean().optional() }).optional())
     .query(({ input }) => findAllBotRules(input?.activeOnly)),
 
-  byId: publicQuery
+  byId: authedQuery
     .input(z.object({ id: z.number() }))
     .query(({ input }) => findBotRuleById(input.id)),
 
-  create: publicQuery
+  match: authedQuery
+    .input(z.object({ message: z.string() }))
+    .query(({ input }) => findMatchingRule(input.message)),
+
+  create: adminQuery
     .input(
       z.object({
         name: z.string().min(1),
@@ -43,7 +47,7 @@ export const botRouter = createRouter({
       })
     ),
 
-  update: publicQuery
+  update: adminQuery
     .input(
       z.object({
         id: z.number(),
@@ -63,15 +67,11 @@ export const botRouter = createRouter({
     )
     .mutation(({ input }) => updateBotRule(input.id, input.data)),
 
-  delete: publicQuery
+  delete: adminQuery
     .input(z.object({ id: z.number() }))
     .mutation(({ input }) => deleteBotRule(input.id)),
 
-  toggle: publicQuery
+  toggle: adminQuery
     .input(z.object({ id: z.number() }))
     .mutation(({ input }) => toggleBotRule(input.id)),
-
-  match: publicQuery
-    .input(z.object({ message: z.string() }))
-    .query(({ input }) => findMatchingRule(input.message)),
 });

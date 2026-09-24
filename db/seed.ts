@@ -7,7 +7,6 @@ import {
   contacts,
   botConfiguration,
 } from "./schema";
-import { sql } from "drizzle-orm";
 
 async function seed() {
   const db = getDb();
@@ -259,7 +258,7 @@ async function seed() {
 
   const createdConversations: { id: number; phoneNumber: string }[] = [];
   for (const conv of conversationsData) {
-    const result = await db.insert(conversations).values(conv).$returningId();
+    const result = await db.insert(conversations).values(conv).returning();
     createdConversations.push({ id: result[0].id, phoneNumber: conv.phoneNumber });
   }
   console.log(`✅ ${conversationsData.length} conversations created`);

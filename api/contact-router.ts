@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createRouter, publicQuery } from "./middleware";
+import { createRouter, authedQuery } from "./middleware";
 import {
   findAllContacts,
   findContactById,
@@ -10,19 +10,19 @@ import {
 } from "./queries/contacts";
 
 export const contactRouter = createRouter({
-  list: publicQuery
+  list: authedQuery
     .input(z.object({ search: z.string().optional() }).optional())
     .query(({ input }) => findAllContacts(input?.search)),
 
-  byId: publicQuery
+  byId: authedQuery
     .input(z.object({ id: z.number() }))
     .query(({ input }) => findContactById(input.id)),
 
-  byPhone: publicQuery
+  byPhone: authedQuery
     .input(z.object({ phone: z.string() }))
     .query(({ input }) => findContactByPhone(input.phone)),
 
-  create: publicQuery
+  create: authedQuery
     .input(
       z.object({
         phoneNumber: z.string().min(1),
@@ -32,17 +32,18 @@ export const contactRouter = createRouter({
         labels: z.any().optional(),
       })
     )
-    .mutation(({ input }) =>
-      createContact({
+    .mutation(({ input }) => {
+      const labelsStr = input.labels ? JSON.stringify(input.labels) : undefined;
+      return createContact({
         phoneNumber: input.phoneNumber,
         name: input.name,
         email: input.email,
         notes: input.notes,
-        labels: input.labels,
-      })
-    ),
+        labels: labelsStr,
+      });
+    }),
 
-  update: publicQuery
+  update: authedQuery
     .input(
       z.object({
         id: z.number(),
@@ -55,9 +56,16 @@ export const contactRouter = createRouter({
         }),
       })
     )
-    .mutation(({ input }) => updateContact(input.id, input.data)),
+    .mutation(({ input }) => {
+      const { id, data } = input;
+      const labelsStr = data.labels !== undefined ? JSON.stringify(data.labels) : undefined;
+      return updateContact(id, {
+        ...data,
+        labels: labelsStr,
+      });
+    }),
 
-  delete: publicQuery
+  delete: authedQuery
     .input(z.object({ id: z.number() }))
     .mutation(({ input }) => deleteContact(input.id)),
 });

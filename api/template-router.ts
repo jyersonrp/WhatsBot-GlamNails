@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createRouter, publicQuery } from "./middleware";
+import { createRouter, authedQuery, adminQuery } from "./middleware";
 import {
   findAllTemplates,
   findTemplateById,
@@ -9,13 +9,13 @@ import {
 } from "./queries/templates";
 
 export const templateRouter = createRouter({
-  list: publicQuery.query(() => findAllTemplates()),
+  list: authedQuery.query(() => findAllTemplates()),
 
-  byId: publicQuery
+  byId: authedQuery
     .input(z.object({ id: z.number() }))
     .query(({ input }) => findTemplateById(input.id)),
 
-  create: publicQuery
+  create: adminQuery
     .input(
       z.object({
         name: z.string().min(1),
@@ -25,17 +25,18 @@ export const templateRouter = createRouter({
         variables: z.any().optional(),
       })
     )
-    .mutation(({ input }) =>
-      createTemplate({
+    .mutation(({ input }) => {
+      const varsStr = input.variables ? JSON.stringify(input.variables) : undefined;
+      return createTemplate({
         name: input.name,
         category: input.category,
         language: input.language,
         content: input.content,
-        variables: input.variables,
-      })
-    ),
+        variables: varsStr,
+      });
+    }),
 
-  update: publicQuery
+  update: adminQuery
     .input(
       z.object({
         id: z.number(),
@@ -50,13 +51,20 @@ export const templateRouter = createRouter({
         }),
       })
     )
-    .mutation(({ input }) => updateTemplate(input.id, input.data)),
+    .mutation(({ input }) => {
+      const { id, data } = input;
+      const varsStr = data.variables !== undefined ? JSON.stringify(data.variables) : undefined;
+      return updateTemplate(id, {
+        ...data,
+        variables: varsStr,
+      });
+    }),
 
-  delete: publicQuery
+  delete: adminQuery
     .input(z.object({ id: z.number() }))
     .mutation(({ input }) => deleteTemplate(input.id)),
 
-  submit: publicQuery
+  submit: adminQuery
     .input(z.object({ id: z.number() }))
     .mutation(({ input }) =>
       updateTemplate(input.id, { status: "pending" })

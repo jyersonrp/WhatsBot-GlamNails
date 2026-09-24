@@ -1,8 +1,8 @@
 import { getDb } from "./connection";
-import { messages, conversations, type InsertMessage } from "@db/schema";
+import { messages, conversations, type InsertMessage, type Message } from "@db/schema";
 import { eq, sql } from "drizzle-orm";
 
-export async function findMessagesByConversation(conversationId: number) {
+export async function findMessagesByConversation(conversationId: number): Promise<Message[]> {
   const db = getDb();
   return db.query.messages.findMany({
     where: eq(messages.conversationId, conversationId),
@@ -10,11 +10,12 @@ export async function findMessagesByConversation(conversationId: number) {
   });
 }
 
-export async function createMessage(data: InsertMessage) {
+export async function createMessage(data: InsertMessage): Promise<Message> {
   const db = getDb();
-  const result = await db.insert(messages).values(data).$returningId();
+  const rows = await db.insert(messages).values(data).returning();
+  const message = rows[0];
 
-  // Update conversation last message
+  // Update conversation last message and lastMessageAt
   await db
     .update(conversations)
     .set({
@@ -23,36 +24,34 @@ export async function createMessage(data: InsertMessage) {
     })
     .where(eq(conversations.id, data.conversationId));
 
-  return db.query.messages.findFirst({
-    where: eq(messages.id, result[0].id),
-  });
+  return message;
 }
 
 export async function updateMessageStatus(
   id: number,
   status: "sent" | "delivered" | "read" | "failed"
-) {
+): Promise<Message | undefined> {
   const db = getDb();
-  await db.update(messages).set({ status }).where(eq(messages.id, id));
-  return db.query.messages.findFirst({ where: eq(messages.id, id) });
+  const rows = await db.update(messages).set({ status }).where(eq(messages.id, id)).returning();
+  return rows[0];
 }
 
-export async function getMessageCountSince(date: Date) {
+export async function getMessageCountSince(date: Date): Promise<number> {
   const db = getDb();
   const result = await db
     .select({ count: sql<number>`count(*)` })
     .from(messages)
     .where(sql`${messages.createdAt} >= ${date}`);
-  return result[0].count;
+  return Number(result[0]?.count ?? 0);
 }
 
-export async function getMessageCountBySender(sender: "customer" | "bot" | "agent") {
+export async function getMessageCountBySender(sender: "customer" | "bot" | "agent"): Promise<number> {
   const db = getDb();
   const result = await db
     .select({ count: sql<number>`count(*)` })
     .from(messages)
     .where(eq(messages.sender, sender));
-  return result[0].count;
+  return Number(result[0]?.count ?? 0);
 }
 
 export async function getMessagesByDay(days: number = 7) {

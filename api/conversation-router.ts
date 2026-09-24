@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createRouter, publicQuery } from "./middleware";
+import { createRouter, authedQuery } from "./middleware";
 import {
   findAllConversations,
   findConversationById,
@@ -10,10 +10,11 @@ import {
   resetUnread,
   getRecentConversations,
   getConversationMessages,
+  setBotMuted,
 } from "./queries/conversations";
 
 export const conversationRouter = createRouter({
-  list: publicQuery
+  list: authedQuery
     .input(
       z
         .object({
@@ -23,15 +24,15 @@ export const conversationRouter = createRouter({
     )
     .query(({ input }) => findAllConversations(input?.status)),
 
-  byId: publicQuery
+  byId: authedQuery
     .input(z.object({ id: z.number() }))
     .query(({ input }) => findConversationById(input.id)),
 
-  byPhone: publicQuery
+  byPhone: authedQuery
     .input(z.object({ phone: z.string() }))
     .query(({ input }) => findConversationByPhone(input.phone)),
 
-  create: publicQuery
+  create: authedQuery
     .input(
       z.object({
         phoneNumber: z.string().min(1),
@@ -47,7 +48,7 @@ export const conversationRouter = createRouter({
       })
     ),
 
-  update: publicQuery
+  update: authedQuery
     .input(
       z.object({
         id: z.number(),
@@ -56,24 +57,34 @@ export const conversationRouter = createRouter({
           status: z.enum(["active", "archived", "pending"]).optional(),
           assignedTo: z.number().optional(),
           lastMessage: z.string().optional(),
+          isBotMuted: z.boolean().optional(),
         }),
       })
     )
     .mutation(({ input }) => updateConversation(input.id, input.data)),
 
-  archive: publicQuery
+  toggleBotMuted: authedQuery
+    .input(
+      z.object({
+        id: z.number(),
+        isBotMuted: z.boolean(),
+      })
+    )
+    .mutation(({ input }) => setBotMuted(input.id, input.isBotMuted)),
+
+  archive: authedQuery
     .input(z.object({ id: z.number() }))
     .mutation(({ input }) => archiveConversation(input.id)),
 
-  resetUnread: publicQuery
+  resetUnread: authedQuery
     .input(z.object({ id: z.number() }))
     .mutation(({ input }) => resetUnread(input.id)),
 
-  recent: publicQuery
+  recent: authedQuery
     .input(z.object({ limit: z.number().default(5) }).optional())
     .query(({ input }) => getRecentConversations(input?.limit || 5)),
 
-  messages: publicQuery
+  messages: authedQuery
     .input(z.object({ conversationId: z.number() }))
     .query(({ input }) => getConversationMessages(input.conversationId)),
 });
